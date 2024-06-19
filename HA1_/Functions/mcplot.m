@@ -1,0 +1,62 @@
+function [varargout] = mcplot(data,obj,legend,color,m)
+    if iscell(data)
+        X = data{1};
+        Y = data{2};
+    else
+        X = data;
+    end
+
+    hist_upper = zeros(size(X));
+    hist_lower = zeros(size(X));
+    hist_means = zeros(size(X));
+
+    Tn = zeros(1,size(X,2));
+    N  = size(X,1);
+    M  = size(X,2);
+
+    O = zeros(size(X));
+    if iscell(data)
+        for i=1:M
+            O(:,i) = obj({X(:,i),Y(:,i)},i);
+        end
+    else
+        for i=1:N
+            O(i,:) = obj(X(i,:));
+        end
+    end
+
+    for n=1:N
+        Tn = Tn + O(n,:);
+        Tt = Tn / n;
+
+        dev = zeros(1,M);
+        for k=1:n
+            dev = dev + (O(k,:)-Tt).^2;
+        end
+
+        dev   = dev/max(1,n-1);
+        delta = 1.96*sqrt(dev/n);
+
+        hist_means(n,:) = Tt;
+        hist_upper(n,:) = hist_means(n,:) + delta;
+        hist_lower(n,:) = hist_means(n,:) - delta;
+
+    end
+
+    Tn = Tn/N;
+
+    if m > 0
+        plot(1:N,hist_means(:,m),"Color",color,"DisplayName",legend);
+        plot(1:N,hist_upper(:,m),":","Color",color,"HandleVisibility","off");
+        plot(1:N,hist_lower(:,m),":","Color",color,"HandleVisibility","off");
+    end
+
+    if nargout == 3
+        varargout{1} = hist_lower;
+        varargout{2} = hist_means;
+        varargout{3} = hist_upper;
+    else
+        varargout{1} = Tn;
+        varargout{2} = delta;
+    end
+end
